@@ -6,6 +6,9 @@ import sqlite3
 from pathlib import Path
 from typing import Any
 
+from .participation import participation_payload
+from .store import Store
+
 EMPIRE_PALETTE = [
     "#7c3aed", "#2563eb", "#0891b2", "#059669",
     "#65a30d", "#ca8a04", "#ea580c", "#dc2626",
@@ -79,8 +82,27 @@ def build_public_state(db_path: str | Path, world_path: str | Path, activation_p
     empire_ids = [f"season0-e{i:02d}" for i in range(1, 17)]
     live_by_id = {e["id"]: e for e in empires}
     member_count: dict[str, int] = {}
+    member_dids: dict[str, list[str]] = {}
     for row in memberships:
         member_count[row["empire_id"]] = member_count.get(row["empire_id"], 0) + 1
+        member_dids.setdefault(row["empire_id"], []).append(row["actor_did"])
+
+    merit_by_empire: dict[str, dict[str, Any]] = {}
+    merit_store=Store(db_path,readonly=True)
+    try:
+        for empire_id,dids in member_dids.items():
+            proofs=[participation_payload(merit_store,did,activation["season_id"],epoch_seconds=21_600) for did in dids]
+            if not proofs: continue
+            merit_by_empire[empire_id]={
+                "player_merit":sum(int(p["player"]["player_merit"]) for p in proofs),
+                "active_epochs":len(set().union(*(set(p["player"]["active_epoch_ids"]) for p in proofs))),
+                "band":max((p["recognition"]["band"] for p in proofs),
+                    key=lambda x:{"UNQUALIFIED":0,"EXPLORER":1,"ACTIVE":2,"CORE":3,"VETERAN":4}.get(x,0)),
+                "badges":sorted(set().union(*(set(p["recognition"]["badges"]) for p in proofs))),
+                "early_testnet_eligible":any(bool(p["recognition"]["early_testnet_eligible"]) for p in proofs),
+            }
+    finally:
+        merit_store.close()
 
     empire_view = []
     for i, empire_id in enumerate(empire_ids):
@@ -95,6 +117,10 @@ def build_public_state(db_path: str | Path, world_path: str | Path, activation_p
             "standing": None,
             "standing_state": "PENDING_RUNTIME_MATERIALIZATION",
             "prestige_public": int(econ.get("prestige", 0) or 0),
+            "participation": merit_by_empire.get(empire_id, {
+                "player_merit":0,"active_epochs":0,"band":"UNQUALIFIED",
+                "badges":[],"early_testnet_eligible":False,
+            }),
         })
 
     empire_lookup = {e["id"]: e for e in empire_view}
