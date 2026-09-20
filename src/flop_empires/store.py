@@ -124,6 +124,47 @@ CREATE TABLE IF NOT EXISTS technocore_rejections(
   code TEXT NOT NULL,
   observed_at INTEGER NOT NULL
 );
+""",
+"""
+CREATE TABLE IF NOT EXISTS flop_accounts(
+  empire_id TEXT PRIMARY KEY,
+  available INTEGER NOT NULL DEFAULT 0 CHECK(available>=0),
+  locked INTEGER NOT NULL DEFAULT 0 CHECK(locked>=0),
+  last_faucet_epoch INTEGER NOT NULL DEFAULT -1
+);
+CREATE TABLE IF NOT EXISTS flop_quotes(
+  quote_id TEXT PRIMARY KEY,
+  actor_did TEXT NOT NULL,
+  empire_id TEXT NOT NULL,
+  operation TEXT NOT NULL,
+  amount INTEGER NOT NULL CHECK(amount>=0),
+  counterparty_empire_id TEXT,
+  expires_at INTEGER NOT NULL,
+  payload_hash TEXT NOT NULL,
+  status TEXT NOT NULL CHECK(status IN('OPEN','EXECUTED','CANCELLED'))
+);
+CREATE TABLE IF NOT EXISTS flop_movements(
+  movement_id TEXT PRIMARY KEY,
+  quote_id TEXT NOT NULL REFERENCES flop_quotes(quote_id),
+  kind TEXT NOT NULL,
+  from_empire_id TEXT,
+  to_empire_id TEXT,
+  amount INTEGER NOT NULL CHECK(amount>=0),
+  epoch INTEGER NOT NULL CHECK(epoch>=0),
+  settlement_ref TEXT NOT NULL,
+  status TEXT NOT NULL CHECK(status IN('SETTLED','FAILED')),
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS flop_locks(
+  lock_id TEXT PRIMARY KEY,
+  empire_id TEXT NOT NULL,
+  amount INTEGER NOT NULL CHECK(amount>=0),
+  purpose TEXT NOT NULL,
+  status TEXT NOT NULL,
+  counterparty_empire_id TEXT,
+  expires_at INTEGER NOT NULL,
+  settlement_ref TEXT NOT NULL
+);
 """
 ]
 
@@ -177,6 +218,9 @@ class Store:
         if version and version[0]=="technical-yield-v0.2":
             tables[8:8]=["empire_economy","economic_epochs"]
             tables.append("offensive_fatigue")
+        flop_version=self.one("SELECT value FROM config WHERE key='flop_economy_version'")
+        if flop_version and flop_version[0]=="flop-token-economy-v0.1":
+            tables.extend(["flop_accounts","flop_quotes","flop_movements","flop_locks"])
         result: dict[str, Any] = {}
         for table in tables:
             rows = [dict(r) for r in self.conn.execute(f"SELECT * FROM {table} ORDER BY 1,2")]

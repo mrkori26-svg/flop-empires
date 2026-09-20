@@ -18,6 +18,7 @@ from .store import Store
 from .technocore import TechnocoreHttpMailbox
 from .production_cli import preflight as production_preflight, run_once as production_run_once, verify_activation as production_verify_activation
 from .season_verifier import verify_season_artifacts
+from .participation import participation_payload
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -37,6 +38,12 @@ def main(argv: list[str] | None = None) -> int:
     status.add_argument("database", type=Path)
     status.add_argument("--mode", default="LOCAL_SIMULATION",
                         choices=["LOCAL_SIMULATION","STAGING_READ_ONLY","STAGING_WRITE"])
+    participation=sub.add_parser("participation",help="derive unsigned participation evidence from the canonical ledger")
+    participation.add_argument("database",type=Path)
+    participation.add_argument("--did",required=True)
+    participation.add_argument("--season-id",required=True)
+    participation.add_argument("--epoch-seconds",type=int,default=21_600)
+    participation.add_argument("--output",type=Path)
     staging = sub.add_parser("staging", help="safe staging operations")
     staging_sub = staging.add_subparsers(dest="staging_command", required=True)
     observe = staging_sub.add_parser("observe", help="read and classify without game-state writes")
@@ -97,6 +104,13 @@ def main(argv: list[str] | None = None) -> int:
         store = Store(args.database)
         print(json.dumps(health_summary(store, mode=args.mode), indent=2, sort_keys=True))
         return 0
+    if args.command == "participation":
+        store=Store(args.database,readonly=True)
+        try: value=participation_payload(store,args.did,args.season_id,epoch_seconds=args.epoch_seconds)
+        finally: store.close()
+        text=json.dumps(value,indent=2,sort_keys=True)
+        if args.output: args.output.write_text(text+"\n",encoding="utf-8")
+        print(text); return 0
     if args.command == "verify-season":
         store=Store(args.database,readonly=True)
         try: result=verify_season_artifacts(store,args.manifest,args.activation,args.world)
