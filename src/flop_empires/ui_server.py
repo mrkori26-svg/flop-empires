@@ -18,6 +18,7 @@ from .readiness import readiness_report
 from .season_verifier import verify_season_artifacts
 from .season_insights import descriptive_scoreboard, replay_timeline
 from .store import Store
+from .interop import runtime_capabilities, runtime_fingerprint
 
 ROOT = Path(__file__).resolve().parents[2]
 UI_DIR = ROOT / "ui"
@@ -81,6 +82,11 @@ class Handler(SimpleHTTPRequestHandler):
         path = urlparse(self.path).path
         if path == "/api/state":
             self._json(200, build_public_state(DEFAULT_DB, WORLD, ACTIVATION, self._session_did())); return
+        if path == "/api/interop/capabilities":
+            self._json(200, runtime_capabilities(MANIFEST, ACTIVATION, LAUNCH)); return
+        if path == "/api/interop/fingerprint":
+            revision = os.environ.get("FLOP_EMPIRES_REVISION", "unknown")
+            self._json(200, runtime_fingerprint(MANIFEST, ACTIVATION, revision)); return
         if path in {"/api/readiness","/api/verification","/api/replay","/api/scoreboard"}:
             store=Store(DEFAULT_DB, readonly=True)
             try:
