@@ -1,5 +1,9 @@
 # FLOP Empires
 
+> **FLOP Tools / REFERENCE APPLICATION** · demonstrates the end-to-end journey `discover -> route -> execute -> receipt -> verify -> observe` as integrations are enabled. It is not counted as external adoption.
+>
+> Core surfaces: [ROUTE](https://github.com/retardio73-boop/flop-session-router) · [PROVE](https://github.com/retardio73-boop/flop-conformance-lab) · [OBSERVE](https://github.com/retardio73-boop/flop-control-center)
+
 Private, locally runnable Season 0 operational freeze implementing FLOP Empires Protocol
 v0.1 plus replay-compatible Technical Yield v0.1 and manifest-selected v0.2. It
 is a Python 3.12 text/CLI referee with SQLite,
