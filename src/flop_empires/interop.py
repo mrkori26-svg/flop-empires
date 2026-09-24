@@ -26,12 +26,15 @@ def runtime_capabilities(manifest_path: Path, activation_path: Path, launch_path
     activation = _load(activation_path)
     launched = launch_path.is_file()
     rows = []
+    registration_available = {"empire.register", "empire.join"}
     for capability in CAPABILITIES:
-        combat = capability in {"empire.raid", "empire.siege"}
-        rows.append({
-            "id": capability,
-            "status": "available" if launched or not combat else "simulation_only",
-        })
+        if launched:
+            status = "available"
+        elif capability in registration_available:
+            status = "available"
+        else:
+            status = "simulation_only"
+        rows.append({"id": capability, "status": status})
     return {
         "schema": SCHEMA_CAPS,
         "runtime_id": "flop-empires-season0",

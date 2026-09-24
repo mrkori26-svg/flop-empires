@@ -1,0 +1,13 @@
+{
+  "continuity": "CONTIGUOUS_SEQ",
+  "first_new_seq": 11,
+  "game_state_mutated": false,
+  "new_generation": 2,
+  "observed_at": 1790285867,
+  "old_cursor": {
+    "generation": 1,
+    "seq": 10
+  },
+  "room": "mb-p-flop-empires-s0-ba02b3dadb3962c9-events",
+  "schema": "flop-empires-technocore-generation-rollover-v1"
+}

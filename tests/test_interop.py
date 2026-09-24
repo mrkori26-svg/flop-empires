@@ -22,8 +22,9 @@ def test_runtime_discovery_is_phase_aware(tmp_path):
     assert caps["schema"] == "flop.runtime-capabilities.v1"
     assert caps["phase"] == "REGISTRATION"
     statuses = {row["id"]: row["status"] for row in caps["capabilities"]}
-    assert statuses["empire.recon"] == "available"
+    assert statuses["empire.recon"] == "simulation_only"
     assert statuses["empire.raid"] == "simulation_only"
+    assert statuses["empire.join"] == "available"
 def test_fingerprint_is_deterministic(tmp_path):
     manifest, activation, _ = _files(tmp_path)
     a = runtime_fingerprint(manifest, activation, "abc123")
