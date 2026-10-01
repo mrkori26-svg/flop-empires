@@ -56,7 +56,9 @@ def _singleton():
         handle.write(b"0");handle.flush()
     handle.seek(0)
     try: msvcrt.locking(handle.fileno(),msvcrt.LK_NBLCK,1)
-    except OSError: raise SystemExit("SEASON0_RUNNER_ALREADY_ACTIVE")
+    except OSError:
+        print("SEASON0_RUNNER_ALREADY_ACTIVE")
+        raise SystemExit(0)
     return handle
 
 def _autonomous_referee(runtime: ProductionRuntime) -> dict:
