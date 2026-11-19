@@ -19,5 +19,6 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - run: python -m pip install -e '.[test]'
-      - run: pytest
       - run: node --check ui/app.js
+      - run: python -m playwright install --with-deps --only-shell chromium
+      - run: pytest
